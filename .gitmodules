@@ -1,0 +1,6 @@
+[submodule "libs/Pico-PIO-USB"]
+	path = libs/Pico-PIO-USB
+	url = https://github.com/sekigon-gonnoc/Pico-PIO-USB
+[submodule "libs/tinyusb"]
+	path = libs/tinyusb
+	url = https://github.com/hathach/tinyusb.git
