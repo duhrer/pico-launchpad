@@ -106,7 +106,7 @@ extern "C" {
 
 // RHPort number used for host can be defined by board.mk, default to port 0
 #ifndef BOARD_TUH_RHPORT
-#define BOARD_TUH_RHPORT      0
+#define BOARD_TUH_RHPORT      1
 #endif
 
 // RHPort max operational speed can defined by board.mk
@@ -129,7 +129,8 @@ extern "C" {
 #define CFG_TUH_MEM_ALIGN           __attribute__ ((aligned(4)))
 #endif
 
-#define CFG_TUH_HUB                 1
+#define CFG_TUH_HUB                 0
+
 // max device support (excluding hub device)
 #define CFG_TUH_DEVICE_MAX          (CFG_TUH_HUB ? 4 : 1) // hub typically has 4 ports
 

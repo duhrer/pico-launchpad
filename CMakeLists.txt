@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-set(NAME pico-midi-transformer)
+set(NAME pico-launchpad)
 
 include(pico_sdk_import.cmake)
 
@@ -24,12 +24,15 @@ add_subdirectory(${PICO_PIO_USB_PATH} ${CMAKE_BINARY_DIR}/Pico-PIO-USB)
 
 # Add your source files
 add_executable(${NAME}
-    src/pico-midi-transformer.c
+    src/pico-launchpad.c
     src/usb_descriptors.c
 )
 
 # use tinyusb implementation
 target_compile_definitions(${NAME} PRIVATE PIO_USB_USE_TINYUSB)
+
+# Really not sure if this is necessary/advisable.
+#target_compile_definitions(${NAME} PRIVATE PICO_RP2040_USB_DEVICE_ENUMERATION_FIX=1)
 
 target_include_directories(${NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -37,9 +40,10 @@ target_include_directories(${NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(
     ${NAME}
     pico_stdlib
-    pico_pio_usb
     tinyusb_device
     tinyusb_host
+    pico_pio_usb
+    #pico_cyw43_arch_none
     pico_bootsel_via_double_reset
 )
 
