@@ -9,9 +9,6 @@
 #include "pico/multicore.h"
 #include "pico/bootrom.h"
 
-// Needed for Pico W / Pico 2 W / Pimoroni Plus 2W
-// #include "pico/cyw43_arch.h"
-
 // Common state variables
 
 // We only work with the most recently connected MIDI device, if we add hub support we'll have to flesh this out further.
@@ -29,8 +26,11 @@ int user_selected_column = 4;
 // RP2 wired to OGX conventions
 // #define PIO_USB_DP_PIN  0
 
-// RP2 wired to avoid taking over the UART pins
-#define PIO_USB_DP_PIN 6
+// Waveshare RP2350 
+#define PIO_USB_DP_PIN      12
+
+// "Breadboard" RP2 wired to avoid taking over the UART pins
+// #define PIO_USB_DP_PIN 6
 
 #define PIO_USB_CONFIG { \
     PIO_USB_DP_PIN, \
@@ -67,15 +67,6 @@ void core1_main() {
   while (true) {
     tuh_task();
   }
-}
-
-static bool led_on = true;
-void toggle_led (void) {
-  led_on = !led_on;
-  gpio_put(LED_PIN, led_on);
-
-  // Alternate GPIO functions for wireless chipset  
-  // cyw43_arch_gpio_put(LED_PIN, led_on);
 }
 
 int main() {
@@ -354,7 +345,38 @@ void midi_paint_launchpad(void) {
     // 1. The same sysex works on the client side
     // 2. tuh_midi_stream_write claims that bytes have been written.
 
-    tuh_midi_stream_write(client_device_idx, 1, paint_side_light, sizeof(paint_side_light));
+    // A packet consists of 4 bytes (8-bit integers) for a "Normal" 3 byte message like a "note on":
+    //
+    // 0. contains the "cable" we're using
+    // 1. MIDI status byte (4 bits for the message type and 4 bits for the channel channel)
+    // 2. (optional) Data Byte, varies by message type.
+    // 3. (optional) Data Byte, varies by message type, or EOX in the case of System Exclusive messages.
+    //
+    // In our case, we're setting the first byte and copying three bytes from a larger payload.
+
+    // Tried breaking it up into multiple 4 byte packets, which I obviously don't understand
+    //tuh_midi_stream_write(client_device_idx, 1, paint_side_light, sizeof(paint_side_light));
+    // bool tuh_midi_packet_write (uint8_t idx, uint8_t const packet[4])
+    // tuh_midi_packet_write(client_device_idx, (uint8_t[4]){
+    //   1, 0xf0, 0x00, 0x20
+    // });
+    // tuh_midi_packet_write(client_device_idx, (uint8_t[4]){
+    //   1, 0x29, 0x2, 0x10
+    // });
+    // tuh_midi_packet_write(client_device_idx, (uint8_t[4]){
+    //   1, 0x28, 0x63, 3
+    // });
+
+    // tuh_midi_packet_write(client_device_idx, (uint8_t[4]){
+    //   1, 0xf7
+    // });
+
+    // uint32_t tuh_midi_packet_write_n(uint8_t idx, const uint8_t* buffer, uint32_t bufsize)
+    uint8_t paint_side_light_packet[13] = {
+        // 1,
+      0xf0, 0x00, 0x20, 0x29, 0x2, 0x10, 0x28, 0x63, 3, 0xf7
+    };
+    tuh_midi_packet_write_n(client_device_idx, paint_side_light_packet, 12);   
 
     // For host transmissions, we have to "flush" the output manually once per cycle.
     tuh_midi_write_flush(client_device_idx);

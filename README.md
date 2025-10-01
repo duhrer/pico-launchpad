@@ -1,13 +1,7 @@
 # Pico Launchpad
 
-*NOTE: This is a work in progress and only supports partial functionality at the
-moment. Although it will power a Launchpad from its host port, it can't send it
-any messages at the moment.  You can use a MIDI routing utility to connect the
-Launchpad and this unit, but at the moment it can't send the sysex messages
-required to paint the launchpad.  Trust me, I'm working on it.*
-
 This project is meant as a starting point to create instruments and interfaces
-using a Novation Launchpad and a dual-USB Raspberry Pi Pico (or Pico 2).
+using a Novation Launchpad Pro (MK 2) and a Raspberry Pi Pico (or Pico 2).
 
 This project was cloned from [my template
 repository](https://github.com/duhrer/pico-midi-transformer), see that project
@@ -15,12 +9,15 @@ for more technical details and background information.
 
 ## Hardware Prerequisites
 
-First, you'll need compatible hardware, which means a Pico or compatible unit
-with two USB ports. The [Adafruit Feather RP2040 with USB Type A
-Host](https://www.adafruit.com/product/5723) is a good example of a unit that
-has the second USB port built-in. You can also bring your own Pico (or
-Pico-compatible) and wire it up as described in the documentation for the [OGX
-Mini project](https://github.com/wiredopposite/OGX-Mini).
+First, you'll need compatible hardware, which means a Pico or compatible
+third-party unit. If your device has a second USB port, you can plug the
+Launchpad directly into that. This work has been tested with:
+
+1. [The Adafruit Feather RP2040 with USB Type A
+Host](https://www.adafruit.com/product/5723)
+2. [A similar RP2350-based Waveshare
+unit](https://www.waveshare.com/wiki/RP2350-USB-A)
+3. Various Pico and Pico2 units and clones hooked up to a USB A breakout via a breadboard.
 
 ## Software Prerequisites
 
@@ -60,10 +57,13 @@ git clone --recurse-submodules https://github.com/duhrer/pico-midi-transformer.g
 
 ### Building
 
-TODO: Add instructions for passing variables to configure the board type and USB PIO settings.
+Before you build the code, you should check the pin settings in
+`pico-launchpad.c` to confirm that they match your unit (there are commented out
+sections for the tested boards mentioned above).
 
-Once you have a working build environment, you should be able to build the code
-in this project using commands like:
+Once you have a working build environment and have updated your pin settings as
+needed, you should be able to build the code in this project using commands
+like:
 
 ```
 mkdir -p build
@@ -95,14 +95,21 @@ you can use `openocd` to deploy binaries. With this method, you deploy one of
 the `.elf` files generated during the build process. Check the "Getting Started
 with Pico Guide" for more info.
 
-### Modules
+### Running the Demo
 
-This project collects a bunch of experiences I've created for various versions
-of the Novation Launchpad family.  See [docs/modules.md] for a complete list and
-instructions on how to use each module. To use any module:
+If you have a compatible dual-USB unit, you should be able to connect the
+Launchpad to your "host" power. You'll need to manually switch to "Programmer
+Layout" by hitting the setup button and the orange pad on the top of the square
+pads. 
 
-1. Build all modules (see above).
-2. Install the module on compatible hardware (see above).
-3. Plug the "client" USB port into a computer.
-4. Configure a sound-producing program or device to connect to the "Pico Launchpad" device.
-5. Plug the launchpad into the "host" USB port of the microcontroller.
+If you're not using the "host" port on your controller, you need to connect both
+the microcontroller and the Launchpad to your computer. You'll also need to
+configure software like [midiconn](https://github.com/mfep/midiconn) to route
+messages in both directions between the microcontroller and the Launchpad.  Note
+that the Launchpad has three inputs and outputs, you want the ones labelled with
+"Standalone Port". If you're connecting on the client side using MIDI routing
+software, your Launchpad should enter the "Programmer Layout" automatically.
+
+Once everything is connected, you should see a "cross" of lit pads on the
+Launchpad. You can use the circular "arrow" pads at the top of the Launchpad to
+move the cross around.

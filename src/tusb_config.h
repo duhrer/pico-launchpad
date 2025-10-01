@@ -129,7 +129,7 @@ extern "C" {
 #define CFG_TUH_MEM_SECTION
 #endif
 
-// Note used in working example, so let's leave it out.
+// Not used in working example, so let's leave it out.
 // #ifndef CFG_TUH_MEM_ALIGN
 // #define CFG_TUH_MEM_ALIGN           __attribute__ ((aligned(4)))
 // #endif
