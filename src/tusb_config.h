@@ -47,7 +47,7 @@ extern "C" {
 #endif
 
 #ifndef CFG_TUSB_OS
-#define CFG_TUSB_OS                 OPT_OS_PICO
+#define CFG_TUSB_OS                 OPT_OS_NONE
 #endif
 
 // CFG_TUSB_DEBUG is defined by compiler in DEBUG build
@@ -96,7 +96,9 @@ extern "C" {
 
 // MIDI FIFO size of TX and RX
 #define CFG_TUD_MIDI_RX_BUFSIZE   (TUD_OPT_HIGH_SPEED ? 512 : 64)
-#define CFG_TUD_MIDI_TX_BUFSIZE   (TUD_OPT_HIGH_SPEED ? 512 : 64)
+
+// This is in theory high for what we need, but 64 bytes doesn't seem to be enough.
+#define CFG_TUD_MIDI_TX_BUFSIZE     128
 
 //--------------------------------------------------------------------
 // HOST CONFIGURATION
@@ -104,32 +106,39 @@ extern "C" {
 
 //------------------------- Board Specific --------------------------
 
-// RHPort number used for host can be defined by board.mk, default to port 0
 #ifndef BOARD_TUH_RHPORT
 #define BOARD_TUH_RHPORT      1
 #endif
 
+// Probably fine, but not used in the one working example I have.
 // RHPort max operational speed can defined by board.mk
-#ifndef BOARD_TUH_MAX_SPEED
-#define BOARD_TUH_MAX_SPEED   OPT_MODE_DEFAULT_SPEED
-#endif
+// #ifndef BOARD_TUH_MAX_SPEED
+// #define BOARD_TUH_MAX_SPEED   OPT_MODE_DEFAULT_SPEED
+// #endif
 
 //--------------------------------------------------------------------
 // Driver Configuration
 //--------------------------------------------------------------------
 
-// Size of buffer to hold descriptors and other data used for enumeration
-#define CFG_TUH_ENUMERATION_BUFSIZE 256
+// This is somewhat higher than we should need, but if I set it lower the client
+// buffer (see CFG_TUD_MIDI_TX_BUFSIZE above) is somehow messed up, i.e. notes
+// appear to drop.
+#define CFG_TUH_MIDI_TX_BUFSIZE 1024
 
 #ifndef CFG_TUH_MEM_SECTION
 #define CFG_TUH_MEM_SECTION
 #endif
 
-#ifndef CFG_TUH_MEM_ALIGN
-#define CFG_TUH_MEM_ALIGN           __attribute__ ((aligned(4)))
-#endif
+// Note used in working example, so let's leave it out.
+// #ifndef CFG_TUH_MEM_ALIGN
+// #define CFG_TUH_MEM_ALIGN           __attribute__ ((aligned(4)))
+// #endif
 
-#define CFG_TUH_HUB                 0
+#define CFG_TUH_HUB                 1 // Enable USB hubs
+#define CFG_TUH_CDC                 0
+#define CFG_TUH_HID                 0 // typical keyboard + mouse device can have 3-4 HID interfaces
+#define CFG_TUH_MSC                 0
+#define CFG_TUH_VENDOR              0
 
 // max device support (excluding hub device)
 #define CFG_TUH_DEVICE_MAX          (CFG_TUH_HUB ? 4 : 1) // hub typically has 4 ports
