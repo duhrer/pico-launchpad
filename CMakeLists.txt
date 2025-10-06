@@ -26,6 +26,7 @@ add_subdirectory(${PICO_PIO_USB_PATH} ${CMAKE_BINARY_DIR}/Pico-PIO-USB)
 add_executable(${NAME}
     src/pico-launchpad.c
     src/usb_descriptors.c
+    src/launchpad.c
 )
 
 # use tinyusb implementation
@@ -34,7 +35,10 @@ target_compile_definitions(${NAME} PRIVATE PIO_USB_USE_TINYUSB)
 # Really not sure if this is necessary/advisable.
 #target_compile_definitions(${NAME} PRIVATE PICO_RP2040_USB_DEVICE_ENUMERATION_FIX=1)
 
-target_include_directories(${NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(${NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/preprocessor/include
+)
 
 # Link required libraries
 target_link_libraries(
