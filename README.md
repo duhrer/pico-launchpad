@@ -1,23 +1,27 @@
 # Pico Launchpad
 
 This project is meant as a starting point to create instruments and interfaces
-using a Novation Launchpad Pro (MK 2) and a Raspberry Pi Pico (or Pico 2).
+using the Novation Launchpad family and a Raspberry Pi Pico (or Pico 2).
 
 This project was cloned from [my template
 repository](https://github.com/duhrer/pico-midi-transformer), see that project
-for more technical details and background information.
+for more technical details and background information on things like the
+[TinyUSB](https://github.com/hathach/tinyusb) and [PIO
+USB](https://github.com/sekigon-gonnoc/Pico-PIO-USB) libraries used here.
+
+This project is the first where I've supported multiple virtual ports on a
+single physical USB port, this is thanks to [this excellent
+example](https://github.com/rppicomidi/midi-multistream2usbdev), which I adapted
+for use here.
 
 ## Hardware Prerequisites
 
 First, you'll need compatible hardware, which means a Pico or compatible
 third-party unit. If your device has a second USB port, you can plug the
-Launchpad directly into that. This work has been tested with:
-
-1. [The Adafruit Feather RP2040 with USB Type A
-Host](https://www.adafruit.com/product/5723)
-2. [A similar RP2350-based Waveshare
-unit](https://www.waveshare.com/wiki/RP2350-USB-A)
-3. Various Pico and Pico2 units and clones hooked up to a USB A breakout via a breadboard.
+Launchpad directly into that. The "host" code in this project has mainly been
+mainly tested with [a RP2350-based Waveshare
+unit](https://www.waveshare.com/wiki/RP2350-USB-A), for anything else at a
+minimum you'll need to adjust some ports in `pico-launchpad.c`.
 
 ## Software Prerequisites
 
@@ -97,19 +101,41 @@ with Pico Guide" for more info.
 
 ### Running the Demo
 
+#### Host Mode
+
 If you have a compatible dual-USB unit, you should be able to connect the
-Launchpad to your "host" power. You'll need to manually switch to "Programmer
-Layout" by hitting the setup button and the orange pad on the top of the square
-pads. 
+Launchpad to your "host" port, and it should power on. Currently, I can't send
+the sysex messages required to set up a Launchpad connected to the "host" port,
+so you'll need to enter programmer mode on devices that support it.  On the
+Launchpad Pro MK2, this is accomplished by holding down the setup button and
+then hitting the orange pad in the top row of "modes".  On the Launchpad Pro
+MK3, you need to hold the setup button in the lower left of the unit, use the
+bottom row of controls to change to the "pad" menu, and then hit the bottom
+right arrow to switch to programmer mode.  Check your user guide if you need
+more help than that.
 
-If you're not using the "host" port on your controller, you need to connect both
-the microcontroller and the Launchpad to your computer. You'll also need to
+#### Client Mode
+
+If you don't have a "host" port on your unit or want to connect more than one
+Launchpad at a time, you'll need to connect things on the "client" side, i.e.
+using code running on your computer. First, you need to connect both the
+microcontroller and the Launchpad to your computer. You'll also need to
 configure software like [midiconn](https://github.com/mfep/midiconn) to route
-messages in both directions between the microcontroller and the Launchpad.  Note
-that the Launchpad has three inputs and outputs, you want the ones labelled with
-"Standalone Port". If you're connecting on the client side using MIDI routing
-software, your Launchpad should enter the "Programmer Layout" automatically.
+messages in both directions between the microcontroller and the Launchpad, as
+shown here:
 
-Once everything is connected, you should see a "cross" of lit pads on the
-Launchpad. You can use the circular "arrow" pads at the top of the Launchpad to
+![Wiring Diagram](images/connection-map.png)
+
+The key thing to note is that each generation has different ports that need to
+be used. The first generation only has one input and output, those connect to
+the MK1 input and output as shown above.  The Launchpad Pro MK2 has three inputs
+and three outputs, the second of each set ("Standalone") is the one you need to
+connoect to the MK2 input and output. The Launchpad Pro MK3 has multiple virtual
+ports, but you only need to connect the first in each set (the one labelled
+"MIDI").
+
+Once everything is connected, you should see a "cross" of lit pads on connected
+Launchpads. You can use the circular "arrow" pads at the top of the Launchpad to
 move the cross around.
+
+![Overhead view of four launchpads from my collection.](images/four-launchpads.jpeg)
