@@ -1,4 +1,5 @@
-/* 
+// Adapted from: https://github.com/rppicomidi/midi-multistream2usbdev/blob/main/usb_descriptors.c
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2019 Ha Thach (tinyusb.org)
@@ -24,6 +25,7 @@
  */
 
 #include "tusb.h"
+#include "midi_device_multistream.h"
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
  * Same VID/PID with different interface e.g MSC (first), then CDC (later) will possibly cause system error on PC.
@@ -78,33 +80,48 @@ enum
   ITF_NUM_TOTAL
 };
 
-#define CONFIG_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + TUD_MIDI_DESC_LEN)
+#ifndef CFG_TUD_MIDI_NUMCABLES_IN
+#define CFG_TUD_MIDI_NUMCABLES_IN 1
+#endif
+
+#ifndef CFG_TUD_MIDI_NUMCABLES_OUT
+#define CFG_TUD_MIDI_NUMCABLES_OUT 1
+#endif
+
+#define CONFIG_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + TUD_MIDI_MULTI_DESC_LEN(CFG_TUD_MIDI_NUMCABLES_IN,CFG_TUD_MIDI_NUMCABLES_OUT))
 
 #if CFG_TUSB_MCU == OPT_MCU_LPC175X_6X || CFG_TUSB_MCU == OPT_MCU_LPC177X_8X || CFG_TUSB_MCU == OPT_MCU_LPC40XX
   // LPC 17xx and 40xx endpoint type (bulk/interrupt/iso) are fixed by its number
   // 0 control, 1 In, 2 Bulk, 3 Iso, 4 In etc ...
-  #define EPNUM_MIDI   0x02
+  #define EPNUM_MIDI_OUT   0x02
+  #define EPNUM_MIDI_IN   0x02
+#elif CFG_TUSB_MCU == OPT_MCU_FT90X || CFG_TUSB_MCU == OPT_MCU_FT93X
+  // On Bridgetek FT9xx endpoint numbers must be unique...
+  #define EPNUM_MIDI_OUT   0x02
+  #define EPNUM_MIDI_IN   0x03
 #else
-  #define EPNUM_MIDI   0x01
+  #define EPNUM_MIDI_OUT   0x01
+  #define EPNUM_MIDI_IN   0x01
 #endif
+
 
 uint8_t const desc_fs_configuration[] =
 {
   // Config number, interface count, string index, total length, attribute, power in mA
-  TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+  TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x00, 100),
 
   // Interface number, string index, EP Out & EP In address, EP size
-  TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 0, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 64)
+  TUD_MIDI_MULTI_DESCRIPTOR(ITF_NUM_MIDI, 0, EPNUM_MIDI_OUT, (0x80 | EPNUM_MIDI_IN), 64, CFG_TUD_MIDI_NUMCABLES_IN, CFG_TUD_MIDI_NUMCABLES_OUT)
 };
 
 #if TUD_OPT_HIGH_SPEED
 uint8_t const desc_hs_configuration[] =
 {
   // Config number, interface count, string index, total length, attribute, power in mA
-  TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+  TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x00, 100),
 
   // Interface number, string index, EP Out & EP In address, EP size
-  TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 0, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 512)
+  TUD_MIDI_MULTI_DESCRIPTOR(ITF_NUM_MIDI, 0, EPNUM_MIDI_OUT, (0x80 | EPNUM_MIDI_IN), 512, CFG_TUD_MIDI_NUMCABLES_IN, CFG_TUD_MIDI_NUMCABLES_OUT)
 };
 #endif
 
@@ -114,7 +131,6 @@ uint8_t const desc_hs_configuration[] =
 uint8_t const * tud_descriptor_configuration_cb(uint8_t index)
 {
   (void) index; // for multiple configurations
-
 #if TUD_OPT_HIGH_SPEED
   // Although we are highspeed, host may be fullspeed.
   return (tud_speed_get() == TUSB_SPEED_HIGH) ?  desc_hs_configuration : desc_fs_configuration;
@@ -133,7 +149,13 @@ char const* string_desc_arr [] =
   (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
   "Some Internet Rando",         // 1: Manufacturer
   "Pico Launchpad",              // 2: Product
-  NULL,                          // 3: Serials, should use chip ID
+  "123456",                          // 3: Serials, should use chip ID
+  "Pico Launchpad MK1 Input",
+  "Pico Launchpad MK2 Input",
+  "Pico Launchpad MK3 Input",
+  "Pico Launchpad MK1 Output",
+  "Pico Launchpad MK2 Output",
+  "Pico Launchpad MK3 Output",
 };
 
 static uint16_t _desc_str[32];
@@ -160,7 +182,7 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
     const char* str = string_desc_arr[index];
 
     // Cap at max char
-    chr_count = strlen(str);
+    chr_count = (uint8_t) strlen(str);
     if ( chr_count > 31 ) chr_count = 31;
 
     // Convert ASCII string into UTF-16
@@ -171,7 +193,7 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
   }
 
   // first byte is length (including header), second byte is string type
-  _desc_str[0] = (TUSB_DESC_STRING << 8 ) | (2*chr_count + 2);
+  _desc_str[0] = (uint16_t) ((TUSB_DESC_STRING << 8 ) | (2*chr_count + 2));
 
   return _desc_str;
 }
